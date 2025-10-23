@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rnsystem - chat</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #chat-container {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            max-height: 100%;
+            background: #fff;
+            display: flex; /* ← 最初から表示 */
+            flex-direction: column;
+            border-radius: 0;
+            box-shadow: none;
+            position: relative;
+        }
+        #chat-header {
+            background: #b1b1b1;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        #messages {
+            list-style: none;
+            padding: 15px;
+            margin: 0;
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        #messages li {
+            padding: 12px;
+            margin: 6px 0;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user {
+            background-color: #DCF8C6;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .bot {
+            background-color: #E5E5EA;
+            align-self: flex-start;
+            text-align: left;
+        }
+        #chat-input {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-top: 1px solid #ddd;
+            flex-direction: column;
+        }
+        #input-box {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+            width: calc(100% - 24px);
+        }
+        #send-btn {
+            background: #b1b1b1;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 50%;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        #send-btn:hover { background: #eeeeee; color: #000; }
+        #reset-btn {
+            display: none;
+            margin-top: 15px;
+            padding: 12px 18px;
+            border: none;
+            background: #b1b1b1;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #reset-btn:hover { background: #eeeeee; color: #000; }
+
+        /* モバイル対応 */
+        @media screen and (max-width: 768px) {
+            #chat-container { width: 100vw; height: 100vh; }
+            #chat-header { font-size: 18px; padding: 12px; }
+            #input-box { font-size: 14px; }
+            #send-btn { font-size: 16px; padding: 10px; }
+        }
+    </style>
+    <!-- recaptcha はテンプレート変数が渡されている場合のみ読み込む -->
+    {% if recaptcha_site_key %}
+    <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+    {% endif %}
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">チャット</div>
+        <ul id="messages"></ul>
+        <div id="chat-input">
+            <input id="input-box" type="text" placeholder="メッセージを入力">
+            <button id="send-btn" onclick="handleSubmit(event)">📩</button>
+            <button id="reset-btn" onclick="resetChat()">最初から問い合わせる</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <script>
+        // 同一オリジンなら namespace を指定して接続（より安定）
+        const socket = io("/message");
+        let sessionId = "";
+        let sessionActive = true;
+
+        // サーバーから session_id を受信
+        socket.on("session_id", function(id) {
+            sessionId = id;
+            console.log("Session ID:", sessionId);
+        });
+
+        // メッセージ受信処理
+        socket.on("message", function(msg) {
+            console.log("受信したメッセージ:", msg);
+            appendBotMessage(msg);
+            if (typeof msg === "string" && msg.includes("セッションが終了しました")) {
+                endSession();
+            }
+        });
+
+        // ページ読み込み時にデフォルトメッセージを追加
+        window.onload = function() {
+            appendBotMessage(
+                "こんにちは、ryohmaです。<br>" +
+                "ご訪問ありがとうございます。<br>" +
+                "タイミングによっては、<br>" +
+                "お返事できない場合がございます。" 
+            );
+        };
+
+        // 送信ボタン
+        function handleSubmit(event) {
+            event.preventDefault();
+            if (!sessionActive) {
+                alert("セッションが途絶えました。最初からやり直してください。");
+                return;
+            }
+            const input = document.getElementById("input-box");
+            if (!input.value.trim()) {
+                alert("メッセージを入力してください。");
+                return;
+            }
+
+            // grecaptcha が使えるときは実行、使えなければ開発用フォールバックでそのまま送信
+            if (typeof grecaptcha !== "undefined" && typeof grecaptcha.execute === "function") {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute("{{ recaptcha_site_key | default('') }}", { action: "submit" })
+                    .then(function(token) {
+                        sendMessage(input.value, token);
+                    })
+                    .catch(function(err){
+                        console.error("grecaptcha error:", err);
+                        // トークン取得に失敗しても送る（開発時用）
+                        sendMessage(input.value, "");
+                    });
+                });
+            } else {
+                // 本番で必ず reCAPTCHA を使いたい場合はここを厳格にして下さい
+                sendMessage(input.value, "");
+            }
+        }
+
+        // メッセージ送信
+        function sendMessage(message, recaptchaToken) {
+            if (!sessionId) {
+                alert("セッションIDが取得できません。再接続してください。");
+                return;
+            }
+            fetch("/send_message", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: message,
+                    session_id: sessionId,
+                    "g-recaptcha-response": recaptchaToken
+                })
+            })
+            .then(response => response.json().catch(()=>({ status: "error", error: "invalid json" })))
+            .then(data => {
+                if (data && data.status === "ok") {
+                    appendUserMessage(message);
+                    document.getElementById("input-box").value = "";
+                } else {
+                    alert("送信エラー: " + (data && data.error ? data.error : JSON.stringify(data)));
+                }
+            })
+            .catch(error => {
+                console.error("送信エラー:", error);
+                alert("送信に失敗しました。コンソールを確認してください。");
+            });
+        }
+
+        // DOMにユーザーメッセージ追加
+        function appendUserMessage(text) {
+            const li = document.createElement("li");
+            li.textContent = text;
+            li.classList.add("user");
+            document.getElementById("messages").appendChild(li);
+            document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+        }
+
+        // DOMにボットメッセージ追加
+        function appendBotMessage(text) {
+            const li = document.createElement("li");
+            li.innerHTML = text;
+            li.classList.add("bot");
+            document.getElementById("messages").appendChild(li);
+            document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+        }
+
+        // セッション終了処理
+        function endSession() {
+            sessionActive = false;
+            document.getElementById("send-btn").style.display = "none";
+            document.getElementById("reset-btn").style.display = "block";
+            document.getElementById("input-box").disabled = true;
+            try { socket.disconnect(); } catch(e) { console.warn(e); }
+        }
+
+        // リセット
+        function resetChat() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
