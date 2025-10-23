@@ -38,12 +38,19 @@ WebSocket通信により、ブラウザ間で即時メッセージを共有で�
 
 ## 🧩 ファイル構成
 > rnsystem-chat/
+
 > ├── app.py # Flaskアプリケーション本体
+
 > ├── requirements.txt # 必要なPythonライブラリ
+
 > ├── static/
+
 > │ └── js/
+
 > │ └── chat-widget.js # クライアント側Socket.IO通信処理
+
 > └── templates/
+
 > └── message.html # チャットUI
 
 ---
@@ -53,7 +60,9 @@ WebSocket通信により、ブラウザ間で即時メッセージを共有で�
 1. **仮想環境を作成して依存パッケージをインストール**
 bash
 > python -m venv venv
+
 > source venv/bin/activate
+
 > pip install -r requirements.txt
 
 2. **環境変数を設定**
@@ -61,10 +70,15 @@ bash
 - コードをコピーする
 cp .env.sample .env
 > RECAPTCHA_PUBLIC_KEY="Google RECAPTCHA 公開鍵"
+
 > RECAPTCHA_PRIVATE_KEY="Google RECAPTCHA 秘密鍵"
+
 > SLACK_BOT_TOKEN="Slackより取得"
+
 > SLACK_CHANNEL_PREFIX=customer-
+
 > ADMIN_USERS="チャットしたいSlackユーザID"
+
 > SESSION_WAIT_TIME=300
 
 3. **アプリケーションを起動**
