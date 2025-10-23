@@ -37,15 +37,15 @@ WebSocket通信により、ブラウザ間で即時メッセージを共有で�
 ---
 
 ## 🧩 ファイル構成
-
-/rnsystem-chat/
-├── app.py # Flaskアプリケーション本体
-├── requirements.txt # 必要なPythonライブラリ
-├── static/
-│ └── js/
-│ └── chat-widget.js # クライアント側Socket.IO通信処理
-└── templates/
-└── message.html # チャットUI
+```mermaid
+graph TD
+    A[rnsystem-chat] --> B[app.py<br><sub>Flaskアプリケーション本体</sub>]
+    A --> C[requirements.txt<br><sub>必要なPythonライブラリ</sub>]
+    A --> D[static]
+    D --> D1[js]
+    D1 --> D1a[chat-widget.js<br><sub>クライアント側Socket.IO通信処理</sub>]
+    A --> E[templates]
+    E --> E1[message.html<br><sub>チャットUI</sub>]
 
 yaml
 コードをコピーする
@@ -55,12 +55,10 @@ yaml
 ## ⚙️ セットアップ方法
 
 1. **仮想環境を作成して依存パッケージをインストール**
-
 ```bash
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-使用ライブラリ例：
 
 bash
 コードをコピーする
