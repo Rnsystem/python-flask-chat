@@ -51,43 +51,35 @@ WebSocket通信により、ブラウザ間で即時メッセージを共有で�
 ## ⚙️ セットアップ方法
 
 1. **仮想環境を作成して依存パッケージをインストール**
-bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+- bash
+- python -m venv venv
+- source venv/bin/activate
+- pip install -r requirements.txt
 
-bash
-コードをコピーする
-pip install flask Flask-SocketIO flask-cors requests Flask-WTF python-dotenv
-環境変数を設定
-
-bash
-コードをコピーする
+2. **環境変数を設定**
+- bash
+- コードをコピーする
 cp .env.sample .env
-.env の例：
+> RECAPTCHA_PUBLIC_KEY="Google RECAPTCHA 公開鍵"
+> RECAPTCHA_PRIVATE_KEY="Google RECAPTCHA 秘密鍵"
+> SLACK_BOT_TOKEN="Slackより取得"
+> SLACK_CHANNEL_PREFIX=customer-
+> ADMIN_USERS="チャットしたいSlackユーザID"
+> SESSION_WAIT_TIME=300
 
-ini
-コードをコピーする
-RECAPTCHA_PUBLIC_KEY="Google RECAPTCHA 公開鍵"
-RECAPTCHA_PRIVATE_KEY="Google RECAPTCHA 秘密鍵"
-SLACK_BOT_TOKEN="Slackより取得"
-SLACK_CHANNEL_PREFIX=customer-
-ADMIN_USERS="チャットしたいSlackユーザID"
-SESSION_WAIT_TIME=300
-アプリケーションを起動
+3. **アプリケーションを起動**
+- bash
+- python app.py
 
-bash
-python app.py
-
-ブラウザでアクセス
-http://localhost:5000
+4. **アブラウザでアクセス**
+- http://localhost:5000
 
 ---
 
 ## 💬 使い方
-ブラウザでページを開き、URLを入力して接続
-メッセージを送信すると、他の全ユーザーにリアルタイムで反映
-新しい参加者・退出イベントもリアルタイムで表示
+- ブラウザでページを開き、URLを入力して接続
+- メッセージを送信すると、他の全ユーザーにリアルタイムで反映
+- 新しい参加者・退出イベントもリアルタイムで表示
 
 ---
 
